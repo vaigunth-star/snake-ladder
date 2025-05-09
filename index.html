@@ -1,0 +1,128 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake: Player vs AI</title>
+  <style>
+    canvas {
+      background: #111;
+      display: block;
+      margin: 20px auto;
+      border: 2px solid #fff;
+    }
+    body {
+      font-family: sans-serif;
+      color: white;
+      text-align: center;
+      background-color: #222;
+    }
+  </style>
+</head>
+<body>
+  <h1>Snake: Player vs AI</h1>
+  <canvas id="gameCanvas" width="600" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const gridSize = 20;
+    const tileCount = canvas.width / gridSize;let apple = { x: 10, y: 10 };
+
+let player = {
+  body: [{ x: 5, y: 5 }],
+  dx: 1,
+  dy: 0
+};
+
+let ai = {
+  body: [{ x: 25, y: 25 }],
+  dx: 0,
+  dy: -1 // Start moving up to avoid being stationary
+};
+
+let speed = 200;
+let gameInterval;
+
+document.addEventListener("keydown", (e) => {
+  switch (e.key) {
+    case "ArrowUp": if (player.dy === 0) { player.dx = 0; player.dy = -1; } break;
+    case "ArrowDown": if (player.dy === 0) { player.dx = 0; player.dy = 1; } break;
+    case "ArrowLeft": if (player.dx === 0) { player.dx = -1; player.dy = 0; } break;
+    case "ArrowRight": if (player.dx === 0) { player.dx = 1; player.dy = 0; } break;
+  }
+});
+
+function moveSnake(snake) {
+  const head = { x: snake.body[0].x + snake.dx, y: snake.body[0].y + snake.dy };
+  snake.body.unshift(head);
+  if (head.x === apple.x && head.y === apple.y) {
+    placeApple();
+    increaseSpeed();
+  } else {
+    snake.body.pop();
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawTile(apple.x, apple.y, "red");
+
+  for (let part of player.body) drawTile(part.x, part.y, "lime");
+  for (let part of ai.body) drawTile(part.x, part.y, "cyan");
+}
+
+function drawTile(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * gridSize, y * gridSize, gridSize - 1, gridSize - 1);
+}
+
+function placeApple() {
+  apple = {
+    x: Math.floor(Math.random() * tileCount),
+    y: Math.floor(Math.random() * tileCount)
+  };
+}
+
+function increaseSpeed() {
+  if (speed > 50) speed -= 10;
+  clearInterval(gameInterval);
+  gameInterval = setInterval(gameLoop, speed);
+}
+
+function aiMove() {
+  const head = ai.body[0];
+  // Prioritize horizontal or vertical move, but not both
+  if (head.x !== apple.x) {
+    ai.dx = apple.x > head.x ? 1 : -1;
+    ai.dy = 0;
+  } else if (head.y !== apple.y) {
+    ai.dx = 0;
+    ai.dy = apple.y > head.y ? 1 : -1;
+  }
+}
+
+function checkCollision(snake) {
+  const head = snake.body[0];
+  if (head.x < 0 || head.y < 0 || head.x >= tileCount || head.y >= tileCount) return true;
+  for (let i = 1; i < snake.body.length; i++) {
+    if (head.x === snake.body[i].x && head.y === snake.body[i].y) return true;
+  }
+  return false;
+}
+
+function gameLoop() {
+  aiMove();
+
+  moveSnake(player);
+  moveSnake(ai);
+
+  if (checkCollision(player)) return alert("Game Over: AI Wins!");
+  if (checkCollision(ai)) return alert("Game Over: Player Wins!");
+
+  draw();
+}
+
+gameInterval = setInterval(gameLoop, speed);
+
+  </script>
+</body>
+</html>
